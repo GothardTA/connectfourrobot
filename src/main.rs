@@ -1,6 +1,6 @@
 use std::process::Command;
 use rand::Rng;
-use image::{io::Reader as ImageReader, GenericImageView, Pixel};
+use image::{io::Reader as ImageReader, Pixel};
 
 fn main() {
     println!("Connect Four Robot v0.1.0 - MIT license - see https://github.com/GothardTA/connectfourrobot for more details");
