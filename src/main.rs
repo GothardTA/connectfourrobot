@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::process::{Command, CommandArgs};
 use rand::Rng;
 use image::{io::Reader as ImageReader, Pixel};
 
@@ -6,7 +6,14 @@ fn main() {
     println!("Connect Four Robot v0.1.0 - MIT license - see https://github.com/GothardTA/connectfourrobot for more details");
 
     // calls the pi's libcamera-still command to take a picture and save it to a file
-    Command::new("libcamera-still").arg("-n").arg("-t 1").arg("--width 640").arg("--height 480").arg("-o image.jpg").output().expect("Failed to take picture");
+    let output = Command::new("bash").arg("takepic.sh").output().expect("Failed to take picture");
+    // Command::new("sleep").arg("5").output().expect("Failed to sleep");
+    let msg = match String::from_utf8(output.stdout) {
+        Ok(v) => v,
+        Err(e) => String::from("Error".to_owned() + &e.to_string()),
+    };
+    println!("{}", msg);
+    println!("Picture Captured and saved as image.jpg");
 
     let img = ImageReader::open("image.jpg").expect("Failed to open file").decode().expect("Failed to decode image").into_rgba8();
     
@@ -46,7 +53,7 @@ fn main() {
             }
         }
     }
-    println!("{:?}", board);
+    println!("{:#?}", board);
 }
 
 fn play_move(board: &mut [[u8; 7]; 6], col: usize, player: char) -> bool {
