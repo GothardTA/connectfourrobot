@@ -1,6 +1,5 @@
 use std::process::Command;
 use std::time::Duration;
-use std::{thread, time};
 use rand::Rng;
 use image::{io::Reader as ImageReader, Pixel};
 use serialport;
