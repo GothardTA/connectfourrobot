@@ -1,9 +1,13 @@
 use std::process::Command;
+use std::time::Duration;
+use std::{thread, time};
 use rand::Rng;
 use image::{io::Reader as ImageReader, Pixel};
+use serialport;
 
 fn main() {
     println!("Connect Four Robot v0.1.0 - MIT license - see https://github.com/GothardTA/connectfourrobot for more details");
+    let mut port = serialport::new("/dev/ttyACM0", 9600).timeout(Duration::from_millis(10)).open().expect("Failed to open port");
 
     // calls the pi's libcamera-still command to take a picture and save it to a file
     let output = Command::new("bash").arg("takepic.sh").output().expect("Failed to take picture");
@@ -54,7 +58,9 @@ fn main() {
         }
     }
     println!("{:#?}", board);
-    println!("{}", ai_move(&mut board, 'Y'))
+    let col = ai_move(&mut board, 'Y');
+    println!("{}", col);
+    port.write(col.to_string().as_bytes()).expect("Write failed!");
 }
 
 fn play_move(board: &mut [[u8; 7]; 6], col: usize, player: char) -> bool {
