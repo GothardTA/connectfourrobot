@@ -18,12 +18,12 @@ fn main() {
     let img = ImageReader::open("image.jpg").expect("Failed to open file").decode().expect("Failed to decode image").into_rgba8();
     
     let positions = [
-        [[200, 75], [236, 75], [275, 75], [315, 75], [360, 75], [406, 75], [460, 75]],
-        [[200, 110], [236, 110], [275, 110], [315, 110], [360, 110], [406, 110], [460, 110]],
-        [[200, 145], [236, 145], [275, 145], [315, 145], [360, 145], [406, 145], [460, 145]],
-        [[190, 190], [236, 190], [275, 190], [315, 190], [360, 190], [406, 190], [460, 190]],
-        [[190, 230], [236, 230], [275, 230], [315, 230], [360, 240], [406, 240], [460, 240]],
-        [[190, 270], [236, 270], [275, 270], [315, 270], [360, 290], [406, 290], [460, 290]]
+        [[80, 340], [150, 400], [206, 414], [252, 420], [286, 426], [317, 436], [341, 434]],
+        [[116, 297], [182, 322], [230, 340], [275, 355], [306, 370], [335, 380], [360, 390]],
+        [[150, 213], [214, 243], [260, 270], [300, 300], [327, 311], [353, 328], [374, 344]],
+        [[190, 140], [244, 178], [285, 213], [326, 240], [350, 260], [370, 276], [392, 294]],
+        [[222, 62], [272, 112], [313, 148], [344, 184], [366, 207], [390, 240], [406, 248]],
+        [[260, 9], [303, 46], [333, 93], [360, 126], [386, 164], [404, 186], [422, 207]]
     ];
 
     let mut board: [[u8; 7]; 6] = [[0; 7]; 6];
@@ -54,6 +54,7 @@ fn main() {
         }
     }
     println!("{:#?}", board);
+    println!("{}", ai_move(&mut board, 'Y'))
 }
 
 fn play_move(board: &mut [[u8; 7]; 6], col: usize, player: char) -> bool {
@@ -258,7 +259,7 @@ fn check_two_in_a_row(board: &[[u8; 7]; 6], player: char) -> bool {
     return false;
 }
 
-fn ai_move(board: &mut [[u8; 7]; 6], player: char) {
+fn ai_move(board: &mut [[u8; 7]; 6], player: char) -> u8 {
     let mut tmp_board: [[u8; 7]; 6];
     let other_player: char;
 
@@ -276,8 +277,7 @@ fn ai_move(board: &mut [[u8; 7]; 6], player: char) {
         }
 
         if check_four_in_a_row(&tmp_board, player) {
-            play_move(board, col, player);
-            return;
+            return col as u8;
         }
     }
 
@@ -289,8 +289,7 @@ fn ai_move(board: &mut [[u8; 7]; 6], player: char) {
         }
 
         if check_four_in_a_row(&tmp_board, other_player) {
-            play_move(board, col, player);
-            return;
+            return col as u8;
         }
     }
 
@@ -302,8 +301,7 @@ fn ai_move(board: &mut [[u8; 7]; 6], player: char) {
         }
 
         if check_three_in_a_row(&tmp_board, player) {
-            play_move(board, col, player);
-            return;
+            return col as u8;
         }
     }
 
@@ -315,12 +313,11 @@ fn ai_move(board: &mut [[u8; 7]; 6], player: char) {
         }
 
         if check_two_in_a_row(&tmp_board, player) {
-            play_move(board, col, player);
-            return;
+            return col as u8;
         }
     }
 
     let mut rng = rand::thread_rng();
     let num = rng.gen_range(0..7);
-    play_move(board, num, player);
+    return num;
 }
