@@ -1,4 +1,4 @@
-use std::process::{Command, CommandArgs};
+use std::process::Command;
 use rand::Rng;
 use image::{io::Reader as ImageReader, Pixel};
 
