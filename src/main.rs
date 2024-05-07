@@ -6,7 +6,7 @@ use serialport;
 
 fn main() {
     println!("Connect Four Robot v0.1.0 - MIT license - see https://github.com/GothardTA/connectfourrobot for more details");
-    let mut port = serialport::new("/dev/ttyACM0", 9600).timeout(Duration::from_millis(10)).open().expect("Failed to open port");
+    let mut port = serialport::new("/dev/ttyUSB0", 9600).timeout(Duration::from_millis(10)).open().expect("Failed to open port");
 
     // calls the pi's libcamera-still command to take a picture and save it to a file
     let output = Command::new("bash").arg("takepic.sh").output().expect("Failed to take picture");
@@ -21,12 +21,12 @@ fn main() {
     let img = ImageReader::open("image.jpg").expect("Failed to open file").decode().expect("Failed to decode image").into_rgba8();
     
     let positions = [
-        [[80, 340], [150, 400], [206, 414], [252, 420], [286, 426], [317, 436], [341, 434]],
-        [[116, 297], [182, 322], [230, 340], [275, 355], [306, 370], [335, 380], [360, 390]],
-        [[150, 213], [214, 243], [260, 270], [300, 300], [327, 311], [353, 328], [374, 344]],
-        [[190, 140], [244, 178], [285, 213], [326, 240], [350, 260], [370, 276], [392, 294]],
-        [[222, 62], [272, 112], [313, 148], [344, 184], [366, 207], [390, 240], [406, 248]],
-        [[260, 9], [303, 46], [333, 93], [360, 126], [386, 164], [404, 186], [422, 207]]
+        [[97, 413], [168, 416], [215, 434], [262, 423], [296, 436], [327, 436], [354, 442]],
+        [[139, 322], [195, 347], [244, 360], [286, 363], [317, 382], [342, 385], [367, 391]],
+        [[173, 237], [230, 246], [272, 274], [307, 295], [336, 310], [360, 328], [382, 343]],
+        [[204, 154], [254, 189], [297, 224], [327, 239], [354, 260], [376, 274], [396, 297]],
+        [[234, 79], [281, 134], [314, 166], [344, 187], [370, 207], [393, 227], [411, 250]],
+        [[261, 11], [303, 65], [337, 104], [362, 138], [387, 162], [405, 183], [425, 208]]
     ];
 
     let mut board: [[u8; 7]; 6] = [[0; 7]; 6];
@@ -45,21 +45,44 @@ fn main() {
                 (img.get_pixel(positions[row][col][0], positions[row][col][1]).to_rgb()[1] as i32 -
                 img.get_pixel(positions[row][col][0], positions[row][col][1]).to_rgb()[2] as i32).abs();
             
-            if rg_difference <= 40 && rb_difference <= 40 && gb_difference <= 40 {
-                board[row][col] = b' ';
-            } else if rg_difference > 50 && rb_difference > 50 && gb_difference <= 20 {
+            if rg_difference < 40 && rb_difference > 40 && gb_difference < 60 {
+                board[row][col] = b' '; 
+            } else if rg_difference > 40 && rb_difference > 40 && gb_difference <= 40 {
                 board[row][col] = b'R';
-            } else if rg_difference <= 40 && rb_difference > 50 && gb_difference > 50 {
+            } else if rg_difference <= 40 && rb_difference > 40 && gb_difference > 40 {
                 board[row][col] = b'Y';
             } else {
-                println!("Row {}, Col {} failed to detect color", row, col);
+                // println!("Row {}, Col {} failed to detect color", row, col);
+                board[row][col] = b' ';
             }
         }
     }
-    println!("{:#?}", board);
+    display_board(&board);
     let col = ai_move(&mut board, 'Y');
     println!("{}", col);
     port.write(col.to_string().as_bytes()).expect("Write failed!");
+}
+
+// outputs the board to the screen
+fn display_board(board: &[[u8; 7]; 6]) {
+    // print!("{}[2J", 27 as char);
+    for row in board {
+        for spot in row {
+            if *spot == b'R' {
+                print!("|\x1b[41m {} \x1b[0m", *spot as char);
+            } else if *spot == b'Y' {
+                print!("|\x1b[43m {} \x1b[0m", *spot as char);
+            } else {
+                print!("|\x1b[44m {} \x1b[0m", *spot as char);
+            }
+        }
+        println!("|");
+        for _i in 0..row.len() {
+            print!("|___");
+        }
+        println!("|");
+    }
+    println!("  1   2   3   4   5   6   7");
 }
 
 fn play_move(board: &mut [[u8; 7]; 6], col: usize, player: char) -> bool {
