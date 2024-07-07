@@ -1,16 +1,19 @@
-use std::process::Command;
-use std::time::Duration;
 use rand::Rng;
 use image::{io::Reader as ImageReader, Pixel};
-use serialport;
+use std::{process::Command, thread, time::Duration};
+use gpio::{GpioOut, GpioIn};
 
 fn main() {
     println!("Connect Four Robot v0.1.0 - MIT license - see https://github.com/GothardTA/connectfourrobot for more details");
-    let mut port = serialport::new("/dev/ttyUSB0", 9600).timeout(Duration::from_millis(10)).open().expect("Failed to open port");
+
+    let mut gpio23 = gpio::sysfs::SysFsGpioOutput::open(23).unwrap();
+    let mut gpio24 = gpio::sysfs::SysFsGpioOutput::open(24).unwrap();
+    let mut gpio25 = gpio::sysfs::SysFsGpioOutput::open(25).unwrap();
+    let mut gpio12 = gpio::sysfs::SysFsGpioInput::open(12).unwrap();
 
     // calls the pi's libcamera-still command to take a picture and save it to a file
     let output = Command::new("bash").arg("takepic.sh").output().expect("Failed to take picture");
-    // Command::new("sleep").arg("5").output().expect("Failed to sleep");
+    
     let msg = match String::from_utf8(output.stdout) {
         Ok(v) => v,
         Err(e) => String::from("Error".to_owned() + &e.to_string()),
@@ -21,12 +24,12 @@ fn main() {
     let img = ImageReader::open("image.jpg").expect("Failed to open file").decode().expect("Failed to decode image").into_rgba8();
     
     let positions = [
-        [[97, 413], [168, 416], [215, 434], [262, 423], [296, 436], [327, 436], [354, 442]],
-        [[139, 322], [195, 347], [244, 360], [286, 363], [317, 382], [342, 385], [367, 391]],
-        [[173, 237], [230, 246], [272, 274], [307, 295], [336, 310], [360, 328], [382, 343]],
-        [[204, 154], [254, 189], [297, 224], [327, 239], [354, 260], [376, 274], [396, 297]],
-        [[234, 79], [281, 134], [314, 166], [344, 187], [370, 207], [393, 227], [411, 250]],
-        [[261, 11], [303, 65], [337, 104], [362, 138], [387, 162], [405, 183], [425, 208]]
+        [[24, 714], [141, 725], [237, 730], [320, 718], [380, 721], [434, 717], [482, 716]],
+        [[90, 532], [195, 571], [284, 585], [353, 601], [411, 612], [459, 616], [502, 626]],
+        [[138, 390], [241, 430], [320, 463], [376, 499], [435, 513], [476, 535], [519, 547]],
+        [[181, 253], [273, 307], [350, 354], [408, 391], [455, 428], [498, 445], [537, 469]],
+        [[222, 105], [307, 190], [378, 249], [434, 283], [475, 342], [515, 368], [553, 385]],
+        [[257, 13], [340, 84], [402, 160], [453, 212], [503, 258], [535, 284], [575, 320]]
     ];
 
     let mut board: [[u8; 7]; 6] = [[0; 7]; 6];
@@ -45,22 +48,68 @@ fn main() {
                 (img.get_pixel(positions[row][col][0], positions[row][col][1]).to_rgb()[1] as i32 -
                 img.get_pixel(positions[row][col][0], positions[row][col][1]).to_rgb()[2] as i32).abs();
             
-            if rg_difference < 40 && rb_difference > 40 && gb_difference < 60 {
-                board[row][col] = b' '; 
-            } else if rg_difference > 40 && rb_difference > 40 && gb_difference <= 40 {
+            if rg_difference > 40 && rb_difference > 40 && gb_difference <= 80 {
                 board[row][col] = b'R';
             } else if rg_difference <= 40 && rb_difference > 40 && gb_difference > 40 {
                 board[row][col] = b'Y';
             } else {
-                // println!("Row {}, Col {} failed to detect color", row, col);
                 board[row][col] = b' ';
             }
         }
     }
+
+    display_board(&board);
+
+    for _iter in 0..6 {
+        for col in 0..7 {
+            for row in 0..5 {
+                if board[row][col] != b' ' && board[row + 1][col] == b' ' {
+                    board[row][col] = b' ';
+                }
+            }
+        }
+    }
+
     display_board(&board);
     let col = ai_move(&mut board, 'Y');
-    println!("{}", col);
-    port.write(col.to_string().as_bytes()).expect("Write failed!");
+    println!("{}", col + 1);
+
+    if col == 0 {
+        gpio23.set_value(false).expect("could not set gpio23");
+        gpio25.set_value(false).expect("could not set gpio25");
+        gpio24.set_value(true).expect("could not set gpio24");
+    } else if col == 1 {
+        gpio23.set_value(false).expect("could not set gpio23");
+        gpio25.set_value(true).expect("could not set gpio25");
+        gpio24.set_value(false).expect("could not set gpio24");
+    } else if col == 2 {
+        gpio23.set_value(false).expect("could not set gpio23");
+        gpio25.set_value(true).expect("could not set gpio25");
+        gpio24.set_value(true).expect("could not set gpio24");
+    } else if col == 3 {
+        gpio23.set_value(true).expect("could not set gpio23");
+        gpio25.set_value(false).expect("could not set gpio25");
+        gpio24.set_value(false).expect("could not set gpio24");
+    } else if col == 4 {
+        gpio23.set_value(true).expect("could not set gpio23");
+        gpio25.set_value(false).expect("could not set gpio25");
+        gpio24.set_value(true).expect("could not set gpio24");
+    } else if col == 5 {
+        gpio23.set_value(true).expect("could not set gpio23");
+        gpio25.set_value(true).expect("could not set gpio25");
+        gpio24.set_value(false).expect("could not set gpio24");
+    } else if col == 6 {
+        gpio23.set_value(true).expect("could not set gpio23");
+        gpio25.set_value(true).expect("could not set gpio25");
+        gpio24.set_value(true).expect("could not set gpio24");
+    }
+
+    thread::sleep(Duration::from_millis(1000));
+    gpio23.set_value(false).expect("could not set gpio23");
+    gpio25.set_value(false).expect("could not set gpio25");
+    gpio24.set_value(false).expect("could not set gpio24");
+    
+    println!("Sent value over cable");
 }
 
 // outputs the board to the screen
