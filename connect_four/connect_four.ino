@@ -68,6 +68,7 @@ void setup() {
 }
 
 void loop() {
+  myservo.write(80);
   while (toNum(analogToDigitalRead(A0), analogToDigitalRead(A1), analogToDigitalRead(A2)) == -1);
   int num = toNum(analogToDigitalRead(A0), analogToDigitalRead(A1), analogToDigitalRead(A2));
 
@@ -77,6 +78,8 @@ void loop() {
   delay(500);
   activateServo();
   delay(1500);
+
+  myservo.write(80);
 
   step(-rowPositions[num]);
 
