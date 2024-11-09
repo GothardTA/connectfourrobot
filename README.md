@@ -17,4 +17,9 @@ Uses an ai to calculate what collumn the robot should drop a piece in<br>
 ||<br>
 \\/<br>
 Send Move to Arduino<br>
-Send collumn to move to over serial to my stepper motor driver board
+Send collumn to move to over gpio pins to my stepper motor driver board
+||<br>
+||<br>
+\\/<br>
+Drop the Piece<br>
+Stepper motor driver board moves piece dropper mechanism to correct slot and drops a piece.
