@@ -8,4 +8,7 @@ edition = "2021"
 [dependencies]
 rand = "0.8.5"
 image = "0.25.1"
-serialport = "4.3"
+rppal = "0.19"
+
+[target.aarch64-unknown-linux-musl]
+linker = "aarch64-linux-gnu-gcc"
